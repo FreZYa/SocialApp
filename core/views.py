@@ -2,18 +2,82 @@ from django.shortcuts import render, redirect
 from django.http import HttpResponse
 from django.contrib.auth.models import User, auth
 from django.contrib import messages
-from .models import Profile
+from .models import Profile, Post, LikePost
 from django.contrib.auth.decorators import login_required
 # Create your views here.
 
 
 @login_required(login_url='signin')
 def index(request):
-    return render(request, 'index.html')
+    user_obj = request.user
+    profile_obj = Profile.objects.get(user=user_obj)
+    posts = Post.objects.all()
+    
+    return render(request, 'index.html', context={"profile_obj": profile_obj, "posts": posts})
+
+@login_required(login_url='signin')
+def upload(request):
+    
+    if request.method == "POST":
+        username = request.user.username
+        image = request.FILES.get("image_upload")
+        caption = request.POST.get("caption")
+        new_post = Post.objects.create(user=username, image=image, caption=caption)
+        new_post.save()
+        return redirect('/')
+    else:
+        return redirect('/')
+
+
+@login_required(login_url='signin')
+def like_post(request):
+    username = request.user.username
+    post_id = request.GET.get("post_id")
+    post = Post.objects.get(id=post_id)
+
+    
+    is_liked = LikePost.objects.filter(post_id=post_id, username=username).first()
+    print("is_liked", is_liked)
+    if not is_liked:
+        LikePost.objects.create(post_id=post_id, username=username)
+        post.no_of_likes = post.no_of_likes + 1
+        post.save()
+        return redirect('/')
+    else:
+        is_liked.delete()
+        post.no_of_likes = post.no_of_likes - 1
+        post.save()
+        return redirect('/')
+
+@login_required(login_url='signin')
+def profile(request, pk):
+    user_obj = User.objects.get(username=pk)
+    user_profile = Profile.objects.get(user=user_obj)
+    user_posts = Post.objects.filter(user=pk)
+    user_post_length = len(user_posts)
+    context = {
+        "user_obj": user_obj,
+        "user_profile": user_profile,
+        "user_posts": user_posts,
+        "user_post_length": user_post_length,
+    }
+    return render(request, 'profile.html', context)
 
 @login_required(login_url='signin')
 def settings(request):
-    return render(request, "setting.html")
+    user_profile = Profile.objects.get(user=request.user)
+
+    if request.method == "POST":
+        image = request.FILES.get("image")
+        if image:
+            user_profile.profileimg = image
+        bio = request.POST.get("bio", None)
+        location = request.POST.get("location", None)
+        user_profile.bio = bio
+        user_profile.location = location
+        user_profile.save()
+        return redirect('settings')
+    return render(request, "setting.html", context={"user_profile": user_profile})
 
 def signup(request):
     if request.method == "POST":
