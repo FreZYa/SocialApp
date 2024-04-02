@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect
 from django.http import HttpResponse
 from django.contrib.auth.models import User, auth
 from django.contrib import messages
-from .models import Profile, Post, LikePost
+from .models import Profile, Post, LikePost, FallowersCount
 from django.contrib.auth.decorators import login_required
 # Create your views here.
 
@@ -27,7 +27,6 @@ def upload(request):
         return redirect('/')
     else:
         return redirect('/')
-
 
 @login_required(login_url='signin')
 def like_post(request):
@@ -55,13 +54,42 @@ def profile(request, pk):
     user_profile = Profile.objects.get(user=user_obj)
     user_posts = Post.objects.filter(user=pk)
     user_post_length = len(user_posts)
+
+    fallower = request.user.username
+    user = pk
+    if FallowersCount.objects.filter(fallower=fallower, user=user).first():
+        button_text = "Unfallow"
+    else:
+        button_text = "Fallow"
+    user_fallowers = len(FallowersCount.objects.filter(user=pk))
+    user_fallowing = len(FallowersCount.objects.filter(fallower=pk))
+
     context = {
         "user_obj": user_obj,
         "user_profile": user_profile,
         "user_posts": user_posts,
         "user_post_length": user_post_length,
+        "button_text": button_text,
+        "user_fallowers": user_fallowers,
+        "user_fallowing": user_fallowing,
     }
     return render(request, 'profile.html', context)
+
+@login_required(login_url='signin')
+def fallow(request):
+    if request.method == "POST":
+        fallower = request.POST.get("fallower")
+        user = request.POST.get("user")
+        fallower_user = FallowersCount.objects.filter(fallower=fallower, user=user).first()
+        if fallower_user:
+            fallower_user.delete()
+            return redirect('/profile/'+user)
+        else:
+            FallowersCount.objects.create(fallower=fallower, user=user)
+            return redirect('/profile/'+user)
+
+    else:
+        return redirect('/')
 
 @login_required(login_url='signin')
 def settings(request):
