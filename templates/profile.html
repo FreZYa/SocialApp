@@ -38,7 +38,12 @@
 					{% else %}
 						<span style="color: white; font-size: 27px;"><b>{{user_post_length}} Posts</b></span>
 					{% endif %}
-					<span style="color: white; font-size: 27px;"><b>{{user_fallowers}} followers</b></span>
+					{% if user_fallowers == 0 or user_fallowers == 1 %}
+						<span style="color: white; font-size: 27px;"><b>{{user_fallowers}} fallower</b></span>
+					{% else %}
+						<span style="color: white; font-size: 27px;"><b>{{user_fallowers}} fallowers</b></span>
+					{% endif %}
+					
 					<span style="color: white; font-size: 27px;"><b>{{user_fallowing}} following</b></span>
 
 					<input type="hidden" value="{{user.username}}" name="fallower" >
