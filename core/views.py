@@ -8,6 +8,8 @@ from django.contrib.auth.decorators import login_required
 
 
 @login_required(login_url='signin')
+
+@login_required(login_url='signin')
 def index(request):
     user_obj = request.user
     profile_obj = Profile.objects.get(user=user_obj)
@@ -65,9 +67,13 @@ def signup(request):
                 user_login = auth.authenticate(username=username, password=password)
                 auth.login(request, user_login)
 
+                user_login = auth.authenticate(username=username, password=password)
+                auth.login(request, user_login)
+
                 user_model = User.objects.get(username=username)
                 new_profile = Profile.objects.create(user=user_model, id_user=user_model.id)
                 new_profile.save()
+                return redirect('settings')
                 return redirect('settings')
         else:
             messages.info(request, 'Password Not Matching')
@@ -76,6 +82,26 @@ def signup(request):
         return render(request, 'signup.html')
     
 def signin(request):
+    if request.method == "POST":
+        username = request.POST.get("username")
+        password = request.POST.get("password")
+        print("username", username)
+        print("password", password)
+        user = auth.authenticate(username=username, password=password)
+        print("user", user)
+        if user:
+            auth.login(request, user)
+            return redirect("/")
+        else:
+            messages.info(request, 'Credentials Invalid')
+            return redirect('signin')
+    else:
+        return render(request, "signin.html")
+    
+@login_required(login_url='signin')
+def logout(request):
+    auth.logout(request)
+    return redirect("signin")
     if request.method == "POST":
         username = request.POST.get("username")
         password = request.POST.get("password")
