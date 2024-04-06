@@ -1,0 +1,6 @@
+*.log
+*.pot
+*.pyc
+__pycache__/
+social_book/settings.py
+db.sqlite3
